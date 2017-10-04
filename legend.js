@@ -10,10 +10,20 @@ define(
                 type: "items",
                 component: "accordion",
                 items: {
-
                     appearance: {
-                        uses: "settings",
-                        items: legendExt.getLegendItems(14) //TODO: add setting to make number of legend items dynamic
+                        uses: "settings"
+                    },
+                    numberOfItems: {
+                        label: "Number of items",
+                        ref: "prop.tbxNumberOfItems",
+                        type: "number",
+                        expression: "optional",
+                        defaultValue: legendExt.nItems
+                    },
+                    legendItems: {
+                        label: "Legend items",
+                        component: "expandable-items",
+                        items: legendExt.getLegendItems(legendExt.nItems)
                     }
                 }
             },
@@ -25,24 +35,25 @@ define(
 
             paint: function($element, layout) {
                 $element.empty();
-                let nLegendItems = Object.keys(layout).filter(function (key) { return key.startsWith('myTextBox'); }).length;
-                let legendSpecs = [];
-                for (let i = 1; i <= nLegendItems; i++) {
+                var nLegendItems = legendExt.nItems = layout.prop.tbxNumberOfItems;
+
+                var legendSpecs = [];
+                for (var i = 1; i <= nLegendItems; i++) {
                     legendSpecs.push({
-                        measureName: layout['myTextBox' + i],
-                        background_color: layout['myColorBox' + i],
-                        typeIsBox: layout['myTypeBox' + i],
-                        isVisible: layout['myVisibleBox' + i]
+                        measureName: layout.prop['myTextBox' + i],
+                        background_color: layout.prop['myColorBox' + i],
+                        typeIsBox: layout.prop['myTypeBox' + i],
+                        isVisible: layout.prop['myVisibleBox' + i]
                     });
                 }
 
                 //console.log(document.getElementById(layout.qInfo.qId), layout.qHyperCube ) ;
-                let legend = '\
+                var legend = '\
 					<div class="legend" id="' + layout.qInfo.qId + '">';
-                let columnWidth = ($element.width() / nLegendItems) < 140 ? 140 : ($element.width() / nLegendItems) ;
+                var columnWidth = ($element.width() / nLegendItems) < 140 ? 140 : ($element.width() / nLegendItems) ;
                 for (var i = 0; i < nLegendItems; i++) {
                     if (legendSpecs[i].isVisible) {
-                        let legendType = legendSpecs[i].typeIsBox ? 'box' : 'line';
+                        var legendType = legendSpecs[i].typeIsBox ? 'box' : 'line';
                         legend += '<div class="column" style="font-size:12px' + ';width:' + columnWidth + 'px' + '"><div class="' + legendType + '" style="background-color:' + legendSpecs[i].background_color + '"></div>' + '<b>' + legendSpecs[i].measureName + '</b>' + '</div>';
                     }
                 }
@@ -50,42 +61,53 @@ define(
                 legend += '</div>';
 
                 $element.html(legend);
+
+                setTimeout(function () {
+                    // Update properties panel
+                    var scope = angular.element("[tid='legendItems']").scope();
+                    if (scope) {
+                        scope.$apply(function () {
+                            scope.definition.items.legendItems.items = legendExt.getLegendItems(legendExt.nItems);
+                        });
+                    }
+                }, 100);
             }
         };
     }
 );
 
 var legendExt = { 
+    nItems: 4,
     getLegendItems: function (nItems) {
         var items = [];
-        for (let i = 1; i <= nItems; i++) {
+        for (var i = 1; i <= nItems; i++) {
             items["myTextBox" + i] = {
                 type: "items",
                 label: "Legend - " + i,
                 items: {
                     visibleBox: {
                         label: "Is Visible?",
-                        ref: "myVisibleBox" + i,
+                        ref: "prop.myVisibleBox" + i,
                         type: "boolean",
                         component: "switch",
-                        defaultValue: true,
+                        defaultValue: false,
                         options: [{ value: true }, { value: false }]
                     },
                     textBox: {
                         label: "Name",
-                        ref: "myTextBox" + i,
+                        ref: "prop.myTextBox" + i,
                         type: "string",
                         expression: "optional"
                     },
                     colorBox: {
                         label: "Color",
-                        ref: "myColorBox" + i,
+                        ref: "prop.myColorBox" + i,
                         type: "string",
                         expression: "optional"
                     },
                     typeBox: {
                         label: "Line/Box",
-                        ref: "myTypeBox" + i,
+                        ref: "prop.myTypeBox" + i,
                         type: "boolean",
                         component: "switch",
                         defaultValue: false,
